@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "rightmessage-personalization",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-03",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "routes": [{ "pattern": "example.com/*", "zone_name": "example.com" }],
+  "vars": {
+    "RIGHTMESSAGE_TEAM_PID": "YOUR_TEAM_PID",
+    "RIGHTMESSAGE_TAG_ORIGIN": "https://t.rightmessage.com"
+  },
+  "observability": { "enabled": true }
+}

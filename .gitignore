@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.wrangler/
+.fixtures/
+.dev.vars*
+.env*
+*.cpuprofile

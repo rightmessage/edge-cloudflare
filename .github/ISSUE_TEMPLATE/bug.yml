@@ -1,0 +1,9 @@
+name: Bug report
+description: Report unexpected Worker behavior
+body:
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: Include expected behavior, reproduction steps, package version, and x-rm-edge header. Remove visitor cookies and secrets.
+    validations:
+      required: true

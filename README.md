@@ -17,7 +17,7 @@ Flicker-free personalization in front of your existing website. A small Cloudfla
 Before the npm release, use the public GitHub package (its `prepare` script builds TypeScript):
 
 ```sh
-npm install github:rightmessage/edge-cloudflare#v0.1.0
+npm install @rightmessage/cloudflare
 npm install --save-dev wrangler
 ```
 

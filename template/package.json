@@ -8,10 +8,10 @@
     "types": "wrangler types"
   },
   "dependencies": {
-    "@rightmessage/cloudflare": "github:rightmessage/edge-cloudflare#v0.1.0"
+    "@rightmessage/cloudflare": "^0.1.1"
   },
   "devDependencies": {
-    "wrangler": "^4.147.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "wrangler": "^4.147.0"
   }
 }

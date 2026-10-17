@@ -3,7 +3,6 @@ import {
   personalizeResponse,
   requestBypassReason,
   startPlanLoad,
-  SUPPORTED_PLAN_VERSIONS,
 } from "@rightmessage/edge";
 import type { PlanLoad } from "@rightmessage/edge";
 
@@ -68,11 +67,6 @@ export function createRightMessageWorker(options: RightMessageWorkerOptions): Ex
       }
       if (!planLoad) return bypass(origin, "plan-unavailable");
       try {
-        const outcome = await planLoad.promise;
-        if (outcome.loaded && !SUPPORTED_PLAN_VERSIONS.includes(outcome.loaded.plan.version)) {
-          planLoad.abort();
-          return bypass(origin, "invalid-plan");
-        }
         return await personalizeResponse(request, origin, planLoad, { HTMLRewriter });
       } catch {
         planLoad.abort();

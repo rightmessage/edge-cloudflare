@@ -72,12 +72,18 @@ Only HTML GET navigation responses are personalized. API paths (`/api`, `/api/*`
 
 No secret or server-side contact API access is required. The core reads published plan rules, query values, attribution/context cookies, user agent, date, and Cloudflare geography. It does not turn unsupported browser-only rules into false.
 
+### A/B tests and cookie consent
+
+Version 0.2.0 runs on `@rightmessage/edge` 0.3. It renders A/B tests and deployed winners, and draws each visitor's version exactly as the browser tag does. A browser opted out with `rm_exclude=1` sees version A of every test, and the Worker writes no cookie for it.
+
+Projects that use Wait for cookie consent need this version. Until the tag has set `rm_consent=1`, the Worker personalizes nothing, writes no cookie, keeps the origin's body and cache headers, and responds with `x-rm-edge: bypass:consent`. Workers on 0.1.x stop personalizing those projects (`bypass:invalid-plan`) until you redeploy with 0.2.0.
+
 ## Caching and debugging
 
 - Applied responses have `Cache-Control: private, no-store` and CDN no-store headers. Do not override these with cache rules or cache personalized output in another proxy.
 - Bypasses keep origin cache headers **unless a touch cookie changed**: cookie-only responses are also private/no-store to prevent visitor attribution leaking through a shared cache.
 - The origin fetch can still use normal Cloudflare origin caching; the personalized result is never written to the Cache API.
-- Inspect `x-rm-edge` with browser DevTools or `curl -i`. An applied page has `x-rm-edge: applied`. Typical bypass values are `no-actions`, `cookie-only`, `preview`, `rsc`, `request-method`, `api`, `asset`, `prefetch`, `not-navigation`, `excluded-path`, `origin-status`, `unsupported-charset`, `invalid-plan`, `plan-unavailable`, `plan-timeout`, `oversized`, and `transform-failed`. Non-HTML responses without an early routing exclusion are passed through untouched.
+- Inspect `x-rm-edge` with browser DevTools or `curl -i`. An applied page has `x-rm-edge: applied`. Typical bypass values are `no-actions`, `cookie-only`, `consent`, `preview`, `rsc`, `request-method`, `api`, `asset`, `prefetch`, `not-navigation`, `excluded-path`, `origin-status`, `unsupported-charset`, `invalid-plan`, `plan-unavailable`, `plan-timeout`, `oversized`, and `transform-failed`. Non-HTML responses without an early routing exclusion are passed through untouched.
 - Enabled Worker observability records core bypass diagnostics. Never add visitor cookies or response bodies to production logs.
 
 ## Browser tag and frameworks

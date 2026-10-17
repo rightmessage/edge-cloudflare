@@ -34,7 +34,7 @@
     "verify:live": "node scripts/verify-live.mjs"
   },
   "dependencies": {
-    "@rightmessage/edge": "^0.1.0"
+    "@rightmessage/edge": "^0.3.0"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.22.0",

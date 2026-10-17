@@ -12,6 +12,11 @@ const plan = {
   dimensions: [{ id: "business", isMultiWinning: false, segments: [{ id: "saas" }], signals: [{ indicates: "saas", definition: { $source: "query", query: "biz", occurrence: "last touch", operator: "equals", value: "saas" }, edge: { supported: true } }] }],
   campaigns: [{ id: "campaign", is_active: true, variants: [{ id: "variant", rules: { all: [{ segment: "saas" }] }, actions: [{ id: "action", actionId: "action", campaignId: "campaign", variantId: "variant", type: "MODIFY_ELEMENT", page: [{ domain: "*", path: "/*" }], selector: "h1", modifications: { text: "Software teams" }, edge: { supported: true, operations: ["text"], deferredOperations: [] } }] }] }],
 };
+const tested = (version: string, text: string) => ({ id: "tested", actionId: "tested", campaignId: "cpn_opCBD8W3", variantId: "var_saas", versions: [version], page: [{ domain: "*", path: "/*" }], selector: "h1", modifications: { text }, edge: { supported: false, reason: "campaign-test", operations: ["text"], deferredOperations: [] } });
+const testedPlan = {
+  version: 1, teamPid, queryNames: [], dimensions: [],
+  campaigns: [{ id: "cpn_opCBD8W3", is_active: true, variants: [{ id: "var_saas", rules: true, abTest: { id: "abt_AbCdEf012345", state: "running", run: "abr_AbCdEf0123456789", weights: { A: 50, B: 50 } }, actions: [tested("A", "Version A teams"), tested("B", "Version B teams")] }] }],
+};
 
 const routes = new Map<string, { method: string; respond: () => Response | Promise<Response> }>();
 beforeEach(() => {
@@ -33,9 +38,9 @@ afterEach(() => {
 function origin(path: string, method = "GET", contentType = "text/html; charset=utf-8") {
   routes.set(`https://site.example${path}`, { method, respond: () => new Response(html, { headers: { "content-type": contentType, "cache-control": "public, max-age=60", etag: '"origin"' } }) });
 }
-function mockPlan(version = 1) {
+function mockPlan(overrides: object = {}) {
   routes.set(`https://t.rightmessage.com/${teamPid}/release.json`, { method: "GET", respond: () => Response.json(release) });
-  routes.set(release.planUrl, { method: "GET", respond: () => Response.json({ ...plan, version }) });
+  routes.set(release.planUrl, { method: "GET", respond: () => Response.json({ ...plan, ...overrides }) });
 }
 async function run(path: string, options: Partial<RightMessageWorkerOptions> = {}, init: RequestInit = {}) {
   const worker = createRightMessageWorker({ teamPid, ...options });
@@ -107,10 +112,37 @@ test("an empty include set excludes every path", async () => {
 });
 
 test("unknown plan schemas fail open", async () => {
-  origin("/?biz=saas"); mockPlan(999);
+  origin("/?biz=saas"); mockPlan({ version: 999 });
   const { response, body } = await run("/?biz=saas");
   expect(body).toBe(html);
   expect(response.headers.get("x-rm-edge")).toBe("bypass:invalid-plan");
+});
+
+test("a tested campaign renders the version its unit draws", async () => {
+  const drawn: (string | undefined)[][] = [];
+  for (const unit of ["AAAAAAAAAAAAAAAAAAAAAA", "zZ9_-QkLmNoPqRsTuVwXyA"]) {
+    origin("/"); mockPlan(testedPlan);
+    const { response, body } = await run("/", {}, { headers: { cookie: `__Host-rm_touch=%7B%22v%22%3A1%2C%22q%22%3A%7B%7D%2C%22r%22%3A%22%22%2C%22u%22%3A%22${unit}%22%7D` } });
+    drawn.push([unit, response.headers.get("x-rm-edge") ?? undefined, body.match(/<h1[^>]*>([^<]*)<\/h1>/)?.[1], body.match(/"versions":\["([A-D])"\]/)?.[1]]);
+  }
+  expect(drawn).toEqual([
+    ["AAAAAAAAAAAAAAAAAAAAAA", "applied", "Version A teams", "A"],
+    ["zZ9_-QkLmNoPqRsTuVwXyA", "applied", "Version B teams", "B"],
+  ]);
+});
+
+test("a consent-required plan without rm_consent=1 bypasses without a cookie", async () => {
+  origin("/?biz=saas"); mockPlan({ version: 2, consent: "required" });
+  const { response, body } = await run("/?biz=saas");
+  expect(body).toBe(html);
+  expect(response.headers.get("x-rm-edge")).toBe("bypass:consent");
+  expect(response.headers.get("set-cookie")).toBeNull();
+  expect(response.headers.get("cache-control")).toBe("public, max-age=60");
+
+  origin("/?biz=saas"); mockPlan({ version: 2, consent: "required" });
+  const consented = await run("/?biz=saas", {}, { headers: { cookie: "rm_consent=1" } });
+  expect(consented.response.headers.get("x-rm-edge")).toBe("applied");
+  expect(consented.body).toContain(">Software teams</h1>");
 });
 
 test("an unreachable plan host preserves origin status, body, and caching", async () => {

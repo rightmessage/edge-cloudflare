@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0
+
+- Depend on `@rightmessage/edge@^0.4.0`; the `^0.3.0` range never picks up 0.4. A visitor who arrives through a RightMessage link carrying their answers in `_rm` is personalized from those answers, which replace earlier answers for the same dimensions.
+- Projects that use Wait for cookie consent personalize such a landing before consent, as the tag does: every test renders version A, campaigns with a holdback render their treatment, no cookie is read or written, and the response is `private, no-store`. Without usable `_rm` answers the Worker still responds `bypass:consent`.
+
 ## 0.2.0
 
 - Depend on `@rightmessage/edge@^0.3.0`. The Worker now renders A/B tests and deployed winners, drawing each visitor's version as the browser tag does. The `^0.1.0` range never picked up edge 0.2, so campaigns with a holdback also start running at the edge with this release.

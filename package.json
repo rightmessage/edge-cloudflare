@@ -1,6 +1,6 @@
 {
   "name": "@rightmessage/cloudflare",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Flicker-free RightMessage personalization in front of your site on Cloudflare Workers",
   "type": "module",
   "license": "MIT",

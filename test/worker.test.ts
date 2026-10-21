@@ -145,6 +145,31 @@ test("a consent-required plan without rm_consent=1 bypasses without a cookie", a
   expect(consented.body).toContain(">Software teams</h1>");
 });
 
+test("before consent, `_rm` answers personalize version A without reading or writing a cookie", async () => {
+  const carried = (dims: object) => `_rm=${btoa(JSON.stringify({ v: 1, dims })).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "~")}`;
+  const path = `/?${carried({ dim_role: ["seg_saas"] })}`;
+  origin(path); mockPlan({ ...testedPlan, version: 2, consent: "required", dimensions: [{ id: "dim_role", segments: [{ id: "seg_saas" }], signals: [] }] });
+  // This unit draws version B once the visitor consents.
+  const { response, body } = await run(path, {}, { headers: { cookie: "__Host-rm_touch=%7B%22v%22%3A1%2C%22q%22%3A%7B%7D%2C%22r%22%3A%22%22%2C%22u%22%3A%22zZ9_-QkLmNoPqRsTuVwXyA%22%7D" } });
+  expect(response.headers.get("x-rm-edge")).toBe("applied");
+  expect(body).toContain(">Version A teams</h1>");
+  expect(response.headers.get("set-cookie")).toBeNull();
+  expect(response.headers.get("cache-control")).toBe("private, no-store");
+
+  // A dimension with signals counts only when a question answers it.
+  const signalled = `/?biz=saas&${carried({ business: ["saas"] })}`;
+  origin(signalled); mockPlan({ version: 2, consent: "required" });
+  const skipped = await run(signalled);
+  expect(skipped.response.headers.get("x-rm-edge")).toBe("bypass:consent");
+  expect(skipped.body).toBe(html);
+
+  origin(signalled); mockPlan({ version: 2, consent: "required", dimensions: [{ ...plan.dimensions[0], asked: true }] });
+  const asked = await run(signalled);
+  expect(asked.response.headers.get("x-rm-edge")).toBe("applied");
+  expect(asked.body).toContain(">Software teams</h1>");
+  expect(asked.response.headers.get("set-cookie")).toBeNull();
+});
+
 test("an unreachable plan host preserves origin status, body, and caching", async () => {
   origin("/?biz=saas");
   routes.set(`https://t.rightmessage.com/${teamPid}/release.json`, { method: "GET", respond: () => { throw new Error("unreachable"); } });

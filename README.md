@@ -78,6 +78,8 @@ Version 0.2.0 runs on `@rightmessage/edge` 0.3. It renders A/B tests and deploye
 
 Projects that use Wait for cookie consent need this version. Until the tag has set `rm_consent=1`, the Worker personalizes nothing, writes no cookie, keeps the origin's body and cache headers, and responds with `x-rm-edge: bypass:consent`. Workers on 0.1.x stop personalizing those projects (`bypass:invalid-plan`) until you redeploy with 0.2.0.
 
+Version 0.3.0 runs on `@rightmessage/edge` 0.4. When a visitor arrives through a RightMessage link that carries their answers in the `_rm` query parameter, the Worker personalizes those answers even before consent, as the tag does: every test shows version A, campaigns with a holdback show their treatment, no cookie is read or written, and the personalized response is `private, no-store`. Without usable `_rm` answers the request still bypasses as `bypass:consent`. With consent, `_rm` answers replace the visitor's earlier answers for the same dimensions.
+
 ## Caching and debugging
 
 - Applied responses have `Cache-Control: private, no-store` and CDN no-store headers. Do not override these with cache rules or cache personalized output in another proxy.
